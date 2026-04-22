@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import {
   View,
   Text,
@@ -6,7 +7,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  SafeAreaView,
   Modal,
 } from 'react-native'
 import { useGameStore, GameMode, Difficulty } from '../store/gameStore'

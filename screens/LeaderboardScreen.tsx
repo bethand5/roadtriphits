@@ -1,10 +1,10 @@
 import React from 'react'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
 } from 'react-native'
 import { useGameStore } from '../store/gameStore'
