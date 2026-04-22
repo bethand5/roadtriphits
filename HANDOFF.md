@@ -31,7 +31,7 @@ store/
   gameStore.ts
 utils/
   scoring.ts
-  spotify.ts (actually uses Deezer)
+  deezer.ts
   sounds.ts
 data/
   billboard.ts
@@ -140,8 +140,7 @@ Known Issues / Notes
 
 expo-av is deprecated — future update should migrate to expo-audio + expo-video
 SafeAreaView deprecation warning — future update should use react-native-safe-area-context
-Files are case sensitive — VS Code sometimes saves with wrong capitalization, use mv in terminal to fix
-Spotify credentials in spotify.ts are unused and should be removed before any public repo push
+Files are case sensitive — VS Code sometimes saves with wrong capitalization, use mv in terminal to 
 ~15 pre-1958 songs have no Deezer preview available — these show "Listen ↗" instead of a play button, which is correct behavior
 find_deezer_ids.mjs script is in the project root — safe to delete, it was a one-time utility
 
