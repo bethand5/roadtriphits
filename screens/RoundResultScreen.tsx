@@ -165,14 +165,23 @@ export default function RoundResultScreen({ navigation, route }: any) {
     setDifficulty,
   } = useGameStore()
 
+  // Declare ALL hooks before any early returns
+  const flipsCompleted = useRef(0)
+  const [scoresVisible, setScoresVisible] = useState(false)
+
+  useEffect(() => {
+    if (!currentRound) return
+    const totalRankScore = results.reduce((sum: number, r: any) => sum + r.rankScore, 0)
+    const totalYearScore = results.reduce((sum: number, r: any) => sum + r.yearScore, 0)
+    playResultSound(totalRankScore / results.length, totalYearScore / results.length)
+  }, [])
+
+  // Now safe to early-return
   if (!currentRound) return null
 
   const isLastRound = currentRoundNumber === totalRounds
   const totalSongsPerPlayer = currentRound.songs.length
   const totalFlipCount = results.length * totalSongsPerPlayer
-
-  const flipsCompleted = useRef(0)
-  const [scoresVisible, setScoresVisible] = useState(false)
 
   const handleFlipComplete = () => {
     flipsCompleted.current += 1
@@ -180,12 +189,6 @@ export default function RoundResultScreen({ navigation, route }: any) {
       setScoresVisible(true)
     }
   }
-
-  useEffect(() => {
-    const totalRankScore = results.reduce((sum: number, r: any) => sum + r.rankScore, 0)
-    const totalYearScore = results.reduce((sum: number, r: any) => sum + r.yearScore, 0)
-    playResultSound(totalRankScore / results.length, totalYearScore / results.length)
-  }, [])
 
   const handleNext = () => {
     players.forEach(() => nextPlayer())
