@@ -1,4 +1,4 @@
-import { Audio } from 'expo-av'
+import { createAudioPlayer, setAudioModeAsync, type AudioPlayer } from 'expo-audio'
 
 const soundFiles = {
   bigWin: require('../assets/BigWin.wav'),
@@ -6,6 +6,16 @@ const soundFiles = {
   smallWin: require('../assets/SmallWin.wav'),
   wrong: require('../assets/Wrong.wav'),
 }
+
+// Pre-create players once at module load — playback is instant after this
+const players: Record<keyof typeof soundFiles, AudioPlayer> = {
+  bigWin: createAudioPlayer(soundFiles.bigWin),
+  mediumWin: createAudioPlayer(soundFiles.mediumWin),
+  smallWin: createAudioPlayer(soundFiles.smallWin),
+  wrong: createAudioPlayer(soundFiles.wrong),
+}
+
+let audioModeConfigured = false
 
 export async function playResultSound(rankScore: number, yearScore: number) {
   let soundKey: keyof typeof soundFiles
@@ -21,14 +31,14 @@ export async function playResultSound(rankScore: number, yearScore: number) {
   }
 
   try {
-    await Audio.setAudioModeAsync({ playsInSilentModeIOS: true })
-    const { sound } = await Audio.Sound.createAsync(soundFiles[soundKey])
-    await sound.playAsync()
-    sound.setOnPlaybackStatusUpdate((status) => {
-      if (status.isLoaded && status.didJustFinish) {
-        sound.unloadAsync()
-      }
-    })
+    if (!audioModeConfigured) {
+      await setAudioModeAsync({ playsInSilentMode: true })
+      audioModeConfigured = true
+    }
+
+    const player = players[soundKey]
+    player.seekTo(0)
+    player.play()
   } catch (e) {
     console.log('Sound error:', e)
   }
