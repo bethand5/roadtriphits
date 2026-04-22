@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   View,
   Text,
@@ -17,17 +17,22 @@ import { useAudioStore } from '../store/audioStore'
 export default function GameScreen({ navigation }: any) {
   const { currentRound, players, difficulty, streak, incrementStreak, resetStreak, addScore } = useGameStore()
 
-  const [playerGuesses, setPlayerGuesses] = useState(
-    players.map(() => ({
-      yearGuess: 1990,
-      decadeGuess: null as number | null,
-      rankedSongs: currentRound ? [...currentRound.songs].sort(() => Math.random() - 0.5) : [],
-      hintUsed: false,
-      hintText: '',
-    }))
-  )
+  const [playerGuesses, setPlayerGuesses] = useState<any[]>([])
 
-  if (!currentRound) return null
+  useEffect(() => {
+    if (!currentRound) return
+    setPlayerGuesses(
+      players.map(() => ({
+        yearGuess: 1990,
+        decadeGuess: null as number | null,
+        rankedSongs: [...currentRound.songs].sort(() => Math.random() - 0.5),
+        hintUsed: false,
+        hintText: '',
+      }))
+    )
+  }, [currentRound, players])
+
+  if (!currentRound || playerGuesses.length === 0) return null
 
   const updateGuess = (playerIndex: number, key: string, value: any) => {
     setPlayerGuesses(prev => {
@@ -122,7 +127,7 @@ export default function GameScreen({ navigation }: any) {
             )}
 
             <Text style={styles.subLabel}>Rank the songs</Text>
-            {playerGuesses[playerIndex].rankedSongs.map((song, songIndex) => (
+            {playerGuesses[playerIndex].rankedSongs.map((song: any, songIndex: number) => (
               <View key={song.title} style={styles.rankCard}>
                 <Text style={styles.rankNum}>#{songIndex + 1}</Text>
                 <View style={styles.rankInfo}>
