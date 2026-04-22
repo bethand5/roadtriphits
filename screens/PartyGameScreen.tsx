@@ -14,7 +14,8 @@ import { allBillboard } from '../data/billboard'
 import { preBillboardData } from '../data/billboard_pre1958'
 import { genreBillboard, getGenreYears } from '../data/genreBillboard'
 import { calculateYearScore, calculateRankingScore, DECADES } from '../utils/scoring'
-import SongPlayer, { currentlyPlayingSound, setCurrentlyPlayingState } from '../components/SongPlayer'
+import SongPlayer from '../components/SongPlayer'
+import { useAudioStore } from '../store/audioStore'
 
 export default function PartyGameScreen({ navigation }: any) {
   const {
@@ -133,10 +134,7 @@ export default function PartyGameScreen({ navigation }: any) {
       return
     }
 
-    if (currentlyPlayingSound) {
-      await currentlyPlayingSound.stopAsync()
-      if (setCurrentlyPlayingState) setCurrentlyPlayingState(false)
-    }
+    useAudioStore.getState().stopCurrent()
 
     const guess = difficulty === 'easy' ? decadeGuess! : yearGuess
     const yearScore = calculateYearScore(currentRound.year, guess, difficulty)

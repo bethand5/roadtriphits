@@ -11,7 +11,8 @@ import {
 import Slider from '@react-native-community/slider'
 import { useGameStore } from '../store/gameStore'
 import { calculateYearScore, calculateRankingScore, getStreakBonus, DECADES } from '../utils/scoring'
-import SongPlayer, { currentlyPlayingSound, setCurrentlyPlayingState } from '../components/SongPlayer'
+import SongPlayer from '../components/SongPlayer'
+import { useAudioStore } from '../store/audioStore'
 
 export default function GameScreen({ navigation }: any) {
   const { currentRound, players, difficulty, streak, incrementStreak, resetStreak, addScore } = useGameStore()
@@ -76,10 +77,7 @@ export default function GameScreen({ navigation }: any) {
       }
     }
 
-    if (currentlyPlayingSound) {
-      await currentlyPlayingSound.stopAsync()
-      if (setCurrentlyPlayingState) setCurrentlyPlayingState(false)
-    }
+    useAudioStore.getState().stopCurrent()
 
     const results = playerGuesses.map((guess) => {
       const yearVal = difficulty === 'easy' ? guess.decadeGuess! : guess.yearGuess

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   View,
   Text,
@@ -8,11 +8,9 @@ import {
   Linking,
   Alert,
 } from 'react-native'
-import { Audio } from 'expo-av'
+import { useAudioPlayer, useAudioPlayerStatus, setAudioModeAsync } from 'expo-audio'
 import { getPreviewUrl } from '../utils/deezer'
-
-export let currentlyPlayingSound: Audio.Sound | null = null
-export let setCurrentlyPlayingState: ((v: boolean) => void) | null = null
+import { useAudioStore } from '../store/audioStore'
 
 interface Props {
   title: string
@@ -22,88 +20,52 @@ interface Props {
 }
 
 export default function SongPlayer({ title, artist, searchQuery, deezerId }: Props) {
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [isLoadingUrl, setIsLoadingUrl] = useState(false)
   const [noPreview, setNoPreview] = useState(false)
-  const soundRef = useRef<Audio.Sound | null>(null)
 
+  // Create the player with a null source — we'll swap in the URL once fetched.
+  const player = useAudioPlayer(previewUrl)
+  const status = useAudioPlayerStatus(player)
+  const setCurrentPlayer = useAudioStore(s => s.setCurrentPlayer)
+
+  // Fetch the preview URL whenever the song changes
   useEffect(() => {
-    setIsPlaying(false)
+    let cancelled = false
+    const loadPreview = async () => {
+      setIsLoadingUrl(true)
+      setNoPreview(false)
+      setPreviewUrl(null)
+      const url = await getPreviewUrl(title, artist, searchQuery, deezerId)
+      if (cancelled) return
+      if (url) {
+        setPreviewUrl(url)
+      } else {
+        setNoPreview(true)
+      }
+      setIsLoadingUrl(false)
+    }
     loadPreview()
     return () => {
-      if (soundRef.current) {
-        if (currentlyPlayingSound === soundRef.current) {
-          currentlyPlayingSound = null
-          setCurrentlyPlayingState = null
-        }
-        soundRef.current.unloadAsync()
-        soundRef.current = null
-      }
+      cancelled = true
     }
-  }, [title, artist])
+  }, [title, artist, searchQuery, deezerId])
 
-  const loadPreview = async () => {
-    setIsLoading(true)
-    setNoPreview(false)
-    const url = await getPreviewUrl(title, artist, searchQuery, deezerId)
-    if (url) {
-      setPreviewUrl(url)
+  // Configure the audio session once on mount
+  useEffect(() => {
+    setAudioModeAsync({ playsInSilentMode: true }).catch(() => {})
+  }, [])
+
+  const togglePlay = () => {
+    if (!previewUrl || !status.isLoaded) return
+
+    if (status.playing) {
+      player.pause()
     } else {
-      setNoPreview(true)
+      // Register as the active player — store will pause any other player
+      setCurrentPlayer(player)
+      player.play()
     }
-    setIsLoading(false)
-  }
-
-  const togglePlay = async () => {
-    if (!previewUrl) return
-
-    if (soundRef.current) {
-      if (isPlaying) {
-        await soundRef.current.pauseAsync()
-        setIsPlaying(false)
-      } else {
-        if (currentlyPlayingSound && currentlyPlayingSound !== soundRef.current) {
-          await currentlyPlayingSound.stopAsync()
-          if (setCurrentlyPlayingState) setCurrentlyPlayingState(false)
-        }
-        currentlyPlayingSound = soundRef.current
-        setCurrentlyPlayingState = setIsPlaying
-        await soundRef.current.playAsync()
-        setIsPlaying(true)
-      }
-      return
-    }
-
-    setIsLoading(true)
-    try {
-      if (currentlyPlayingSound) {
-        await currentlyPlayingSound.stopAsync()
-        if (setCurrentlyPlayingState) setCurrentlyPlayingState(false)
-        currentlyPlayingSound = null
-        setCurrentlyPlayingState = null
-      }
-
-      await Audio.setAudioModeAsync({ playsInSilentModeIOS: true })
-      const { sound: newSound } = await Audio.Sound.createAsync(
-        { uri: previewUrl },
-        { shouldPlay: true }
-      )
-      newSound.setOnPlaybackStatusUpdate((status) => {
-        if (status.isLoaded && status.didJustFinish) {
-          setIsPlaying(false)
-          currentlyPlayingSound = null
-          setCurrentlyPlayingState = null
-        }
-      })
-      soundRef.current = newSound
-      currentlyPlayingSound = newSound
-      setCurrentlyPlayingState = setIsPlaying
-      setIsPlaying(true)
-    } catch (e) {
-      console.log('Audio error:', e)
-    }
-    setIsLoading(false)
   }
 
   const openInMusic = () => {
@@ -130,6 +92,8 @@ export default function SongPlayer({ title, artist, searchQuery, deezerId }: Pro
     )
   }
 
+  const isLoading = isLoadingUrl || (previewUrl !== null && !status.isLoaded)
+
   return (
     <View style={styles.container}>
       <View style={styles.info}>
@@ -150,7 +114,7 @@ export default function SongPlayer({ title, artist, searchQuery, deezerId }: Pro
         </TouchableOpacity>
       ) : (
         <TouchableOpacity style={styles.playBtn} onPress={togglePlay}>
-          <Text style={styles.playIcon}>{isPlaying ? '⏸' : '▶'}</Text>
+          <Text style={styles.playIcon}>{status.playing ? '⏸' : '▶'}</Text>
         </TouchableOpacity>
       )}
     </View>
