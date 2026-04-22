@@ -9,7 +9,7 @@ import {
   Alert,
 } from 'react-native'
 import { Audio } from 'expo-av'
-import { getPreviewUrl } from '../utils/spotify'
+import { getPreviewUrl } from '../utils/deezer'
 
 export let currentlyPlayingSound: Audio.Sound | null = null
 export let setCurrentlyPlayingState: ((v: boolean) => void) | null = null
