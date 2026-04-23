@@ -1,7 +1,8 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { NavigationContainer } from '@react-navigation/native'
 import { createStackNavigator } from '@react-navigation/stack'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
+import { useStatsStore } from './store/statsStore'
 import HomeScreen from './screens/HomeScreen'
 import TurnIntroScreen from './screens/TurnIntroScreen'
 import GameScreen from './screens/GameScreen'
@@ -15,6 +16,12 @@ import PrivacyPolicyScreen from './screens/PrivacyPolicyScreen'
 const Stack = createStackNavigator()
 
 export default function App() {
+  const loadStats = useStatsStore(s => s.loadStats)
+
+  useEffect(() => {
+    loadStats()
+  }, [])
+
   return (
     <SafeAreaProvider>
       <NavigationContainer>
