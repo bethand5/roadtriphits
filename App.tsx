@@ -12,6 +12,7 @@ import PartyGameScreen from './screens/PartyGameScreen'
 import PartyResultScreen from './screens/PartyResultScreen'
 import PartyFinalScreen from './screens/PartyFinalScreen'
 import PrivacyPolicyScreen from './screens/PrivacyPolicyScreen'
+import StatsScreen from './screens/StatsScreen'
 
 const Stack = createStackNavigator()
 
@@ -41,6 +42,7 @@ export default function App() {
           <Stack.Screen name="PartyResult" component={PartyResultScreen} options={{ gestureEnabled: false }} />
           <Stack.Screen name="PartyFinal" component={PartyFinalScreen} options={{ gestureEnabled: false }} />
           <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
+          <Stack.Screen name="Stats" component={StatsScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>
