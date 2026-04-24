@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import {
   View,
@@ -8,13 +8,21 @@ import {
   ScrollView,
 } from 'react-native'
 import { useGameStore } from '../store/gameStore'
+import { useStatsStore } from '../store/statsStore'
 
 export default function LeaderboardScreen({ navigation }: any) {
-  const { players, resetGame, totalRounds, difficulty, setTotalRounds, setGameMode, setDifficulty } = useGameStore()
+  const { players, resetGame, totalRounds, difficulty, maxStreakInGame, setTotalRounds, setGameMode, setDifficulty } = useGameStore()
+  const recordVersusGame = useStatsStore(s => s.recordVersusGame)
 
   const sorted = [...players].sort((a, b) => b.score - a.score)
   const winner = sorted[0]
   const medals = ['🥇', '🥈', '🥉']
+
+  useEffect(() => {
+    if (winner) {
+      recordVersusGame(winner.score, maxStreakInGame)
+    }
+  }, [])
 
   const playAgain = () => {
     resetGame()

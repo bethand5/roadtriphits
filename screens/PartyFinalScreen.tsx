@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import {
   View,
@@ -8,11 +8,17 @@ import {
   ScrollView,
 } from 'react-native'
 import { useGameStore } from '../store/gameStore'
+import { useStatsStore } from '../store/statsStore'
 
 export default function PartyFinalScreen({ navigation }: any) {
-  const { partyScore, partyMaxScore, totalRounds, resetGame } = useGameStore()
+  const { partyScore, partyMaxScore, totalRounds, maxStreakInGame, resetGame } = useGameStore()
+  const recordPartyGame = useStatsStore(s => s.recordPartyGame)
 
-  const percentage = Math.round((partyScore / partyMaxScore) * 100)
+  const percentage = partyMaxScore > 0 ? Math.round((partyScore / partyMaxScore) * 100) : 0
+
+  useEffect(() => {
+    recordPartyGame(percentage, maxStreakInGame)
+  }, [])
 
   const getMessage = () => {
     if (percentage === 100) return "Perfect score! You're music legends! 🎉"

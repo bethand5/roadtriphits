@@ -35,6 +35,7 @@ interface GameState {
   partyScore: number
   partyMaxScore: number
   streak: number
+  maxStreakInGame: number
   setPlayers: (names: string[]) => void
   setTotalRounds: (n: number) => void
   setRound: (round: Round) => void
@@ -64,6 +65,7 @@ export const useGameStore = create<GameState>((set) => ({
   partyScore: 0,
   partyMaxScore: 0,
   streak: 0,
+  maxStreakInGame: 0,
 
   setPlayers: (names) =>
     set({ players: names.map(name => ({ name, score: 0 })) }),
@@ -94,7 +96,13 @@ export const useGameStore = create<GameState>((set) => ({
     })),
 
   incrementStreak: () =>
-    set(state => ({ streak: state.streak + 1 })),
+    set(state => {
+      const newStreak = state.streak + 1
+      return {
+        streak: newStreak,
+        maxStreakInGame: Math.max(state.maxStreakInGame, newStreak),
+      }
+    }),
 
   resetStreak: () => set({ streak: 0 }),
 
@@ -121,6 +129,7 @@ export const useGameStore = create<GameState>((set) => ({
       partyScore: 0,
       partyMaxScore: 0,
       streak: 0,
+      maxStreakInGame: 0,
       decadeFilter: [],
       genreFilter: [],
     }),
