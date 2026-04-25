@@ -1,4 +1,5 @@
 import { createAudioPlayer, setAudioModeAsync, type AudioPlayer } from 'expo-audio'
+import * as Haptics from 'expo-haptics'
 
 const soundFiles = {
   bigWin: require('../assets/BigWin.wav'),
@@ -15,6 +16,12 @@ const players: Record<keyof typeof soundFiles, AudioPlayer> = {
   wrong: createAudioPlayer(soundFiles.wrong),
 }
 
+// Force volume to max on all players
+players.bigWin.volume = 1.0
+players.mediumWin.volume = 1.0
+players.smallWin.volume = 1.0
+players.wrong.volume = 1.0
+
 let audioModeConfigured = false
 
 export async function playResultSound(rankScore: number, yearScore: number) {
@@ -28,6 +35,21 @@ export async function playResultSound(rankScore: number, yearScore: number) {
     soundKey = 'smallWin'
   } else {
     soundKey = 'wrong'
+  }
+
+  // Fire haptic alongside the sound
+  try {
+    if (soundKey === 'bigWin') {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+    } else if (soundKey === 'mediumWin') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    } else if (soundKey === 'smallWin') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    } else {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
+    }
+  } catch (e) {
+    // Haptics not supported — fail silent
   }
 
   try {
