@@ -11,6 +11,7 @@ import {
 } from 'react-native'
 import { useGameStore, GameMode, Difficulty } from '../store/gameStore'
 import { Genre } from '../data/billboard_pre1958'
+import { useDailyStore, getTodayKey } from '../store/dailyStore'
 
 const AVATARS = ['🎸', '🚗', '🎤', '🏎️', '🥁', '🚕', '🎹', '🛻', '🎺', '🚙', '🎻', '🎧']
 
@@ -51,6 +52,13 @@ export default function HomeScreen({ navigation }: any) {
     setGenreFilter,
     resetGame,
   } = useGameStore()
+
+  // Daily challenge status
+  const dailyHistory = useDailyStore(s => s.history)
+  const dailyStreak = useDailyStore(s => s.currentStreak)
+  const todayKey = getTodayKey()
+  const todayResult = dailyHistory[todayKey]
+
   const [selectedMode, setSelectedMode] = useState<GameMode>('versus')
   const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>('hard')
   const [selectedDecades, setSelectedDecades] = useState<number[]>([])
@@ -126,6 +134,29 @@ export default function HomeScreen({ navigation }: any) {
         <Text style={styles.emoji}>🚗</Text>
         <Text style={styles.title}>Road Trip Hits</Text>
         <Text style={styles.subtitle}>Guess the year, rank the songs</Text>
+
+        <TouchableOpacity
+          style={styles.dailyCard}
+          onPress={() => navigation.navigate('DailyChallenge')}
+        >
+          <View style={styles.dailyTopRow}>
+            <Text style={styles.dailyBadge}>⭐ DAILY CHALLENGE</Text>
+            {dailyStreak >= 2 && (
+              <Text style={styles.dailyStreak}>🔥 {dailyStreak} day streak</Text>
+            )}
+          </View>
+          {todayResult?.completed ? (
+            <>
+              <Text style={styles.dailyTitle}>You scored {todayResult.score}/19 today</Text>
+              <Text style={styles.dailySubtitle}>Tap to see your result · Come back tomorrow</Text>
+            </>
+          ) : (
+            <>
+              <Text style={styles.dailyTitle}>Today's challenge is ready</Text>
+              <Text style={styles.dailySubtitle}>Same songs for everyone · One try only</Text>
+            </>
+          )}
+        </TouchableOpacity>
 
         <Text style={styles.sectionLabel}>Mode</Text>
         <View style={styles.modeRow}>
@@ -299,7 +330,42 @@ const styles = StyleSheet.create({
   scroll: { padding: 24 },
   emoji: { fontSize: 48, textAlign: 'center', marginTop: 20 },
   title: { fontSize: 28, fontWeight: '700', textAlign: 'center', marginTop: 8, color: '#f1f5f9' },
-  subtitle: { fontSize: 15, color: '#94a3b8', textAlign: 'center', marginTop: 4, marginBottom: 32 },
+  subtitle: { fontSize: 15, color: '#94a3b8', textAlign: 'center', marginTop: 4, marginBottom: 24 },
+  dailyCard: {
+    backgroundColor: '#172554',
+    borderRadius: 16,
+    padding: 18,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: '#2563eb',
+  },
+  dailyTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  dailyBadge: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#93c5fd',
+    letterSpacing: 0.8,
+  },
+  dailyStreak: {
+    fontSize: 12,
+    color: '#f59e0b',
+    fontWeight: '600',
+  },
+  dailyTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#f1f5f9',
+    marginBottom: 4,
+  },
+  dailySubtitle: {
+    fontSize: 13,
+    color: '#93c5fd',
+  },
   sectionLabel: { fontSize: 12, color: '#64748b', marginBottom: 4, marginTop: 8, textTransform: 'uppercase', letterSpacing: 1 },
   filterHint: { fontSize: 12, color: '#475569', marginBottom: 10 },
   modeRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
