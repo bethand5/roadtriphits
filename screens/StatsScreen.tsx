@@ -9,6 +9,7 @@ import {
   Alert,
 } from 'react-native'
 import { useStatsStore } from '../store/statsStore'
+import { useDailyStore } from '../store/dailyStore'
 
 export default function StatsScreen({ navigation }: any) {
   const {
@@ -19,6 +20,15 @@ export default function StatsScreen({ navigation }: any) {
     isLoaded,
     resetStats,
   } = useStatsStore()
+
+  const {
+    history: dailyHistory,
+    currentStreak: dailyStreak,
+    bestScore: dailyBest,
+    isLoaded: dailyLoaded,
+  } = useDailyStore()
+
+  const totalDailyPlayed = Object.keys(dailyHistory).length
 
   const confirmReset = () => {
     Alert.alert(
@@ -36,6 +46,8 @@ export default function StatsScreen({ navigation }: any) {
   }
 
   const hasPlayedAnyGames = totalGamesPlayed > 0
+  const hasPlayedDaily = totalDailyPlayed > 0
+  const hasAnyStats = hasPlayedAnyGames || hasPlayedDaily
 
   return (
     <SafeAreaView style={styles.container}>
@@ -48,9 +60,9 @@ export default function StatsScreen({ navigation }: any) {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll}>
-        {!isLoaded ? (
+        {!isLoaded || !dailyLoaded ? (
           <Text style={styles.loadingText}>Loading...</Text>
-        ) : !hasPlayedAnyGames ? (
+        ) : !hasAnyStats ? (
           <View style={styles.emptyBox}>
             <Text style={styles.emptyEmoji}>📊</Text>
             <Text style={styles.emptyTitle}>No games yet</Text>
@@ -58,29 +70,59 @@ export default function StatsScreen({ navigation }: any) {
           </View>
         ) : (
           <>
-            <View style={styles.statCard}>
-              <Text style={styles.statLabel}>🏆 Highest Versus score</Text>
-              <Text style={styles.statValue}>{highestVersusScore}</Text>
-              <Text style={styles.statSub}>Best single-player score in Versus mode</Text>
-            </View>
+            {hasPlayedAnyGames && (
+              <>
+                <Text style={styles.sectionLabel}>VERSUS & PARTY</Text>
 
-            <View style={styles.statCard}>
-              <Text style={styles.statLabel}>🎉 Best Party percentage</Text>
-              <Text style={styles.statValue}>{bestPartyPercentage}%</Text>
-              <Text style={styles.statSub}>Best group accuracy in Party mode</Text>
-            </View>
+                <View style={styles.statCard}>
+                  <Text style={styles.statLabel}>🏆 Highest Versus score</Text>
+                  <Text style={styles.statValue}>{highestVersusScore}</Text>
+                  <Text style={styles.statSub}>Best single-player score in Versus mode</Text>
+                </View>
 
-            <View style={styles.statCard}>
-              <Text style={styles.statLabel}>🎮 Total games played</Text>
-              <Text style={styles.statValue}>{totalGamesPlayed}</Text>
-              <Text style={styles.statSub}>Versus + Party combined</Text>
-            </View>
+                <View style={styles.statCard}>
+                  <Text style={styles.statLabel}>🎉 Best Party percentage</Text>
+                  <Text style={styles.statValue}>{bestPartyPercentage}%</Text>
+                  <Text style={styles.statSub}>Best group accuracy in Party mode</Text>
+                </View>
 
-            <View style={styles.statCard}>
-              <Text style={styles.statLabel}>🔥 Longest streak</Text>
-              <Text style={styles.statValue}>{longestStreak}</Text>
-              <Text style={styles.statSub}>Most correct years in a row</Text>
-            </View>
+                <View style={styles.statCard}>
+                  <Text style={styles.statLabel}>🎮 Total games played</Text>
+                  <Text style={styles.statValue}>{totalGamesPlayed}</Text>
+                  <Text style={styles.statSub}>Versus + Party combined</Text>
+                </View>
+
+                <View style={styles.statCard}>
+                  <Text style={styles.statLabel}>🔥 Longest streak</Text>
+                  <Text style={styles.statValue}>{longestStreak}</Text>
+                  <Text style={styles.statSub}>Most correct years in a row</Text>
+                </View>
+              </>
+            )}
+
+            {hasPlayedDaily && (
+              <>
+                <Text style={styles.sectionLabel}>DAILY CHALLENGE</Text>
+
+                <View style={styles.statCard}>
+                  <Text style={styles.statLabel}>📅 Current day streak</Text>
+                  <Text style={styles.statValue}>{dailyStreak}</Text>
+                  <Text style={styles.statSub}>Consecutive days completed</Text>
+                </View>
+
+                <View style={styles.statCard}>
+                  <Text style={styles.statLabel}>⭐ Best daily score</Text>
+                  <Text style={styles.statValue}>{dailyBest}</Text>
+                  <Text style={styles.statSub}>Highest single-day score</Text>
+                </View>
+
+                <View style={styles.statCard}>
+                  <Text style={styles.statLabel}>✅ Days played</Text>
+                  <Text style={styles.statValue}>{totalDailyPlayed}</Text>
+                  <Text style={styles.statSub}>Total daily challenges completed</Text>
+                </View>
+              </>
+            )}
 
             <TouchableOpacity style={styles.resetBtn} onPress={confirmReset}>
               <Text style={styles.resetBtnText}>Reset all stats</Text>
@@ -112,6 +154,14 @@ const styles = StyleSheet.create({
   emptyEmoji: { fontSize: 56, marginBottom: 16 },
   emptyTitle: { fontSize: 20, fontWeight: '600', color: '#f1f5f9', marginBottom: 8 },
   emptyText: { fontSize: 14, color: '#94a3b8', textAlign: 'center' },
+  sectionLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#64748b',
+    letterSpacing: 1.2,
+    marginBottom: 12,
+    marginTop: 8,
+  },
   statCard: {
     backgroundColor: '#1e293b',
     borderRadius: 16,
