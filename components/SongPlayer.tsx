@@ -23,25 +23,30 @@ export default function SongPlayer({ title, artist, searchQuery, deezerId }: Pro
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [isLoadingUrl, setIsLoadingUrl] = useState(false)
   const [noPreview, setNoPreview] = useState(false)
+  const [networkError, setNetworkError] = useState(false)
+  const [retryCount, setRetryCount] = useState(0)
 
   // Create the player with a null source — we'll swap in the URL once fetched.
   const player = useAudioPlayer(previewUrl)
   const status = useAudioPlayerStatus(player)
   const setCurrentPlayer = useAudioStore(s => s.setCurrentPlayer)
 
-  // Fetch the preview URL whenever the song changes
+  // Fetch the preview URL whenever the song or retry counter changes
   useEffect(() => {
     let cancelled = false
     const loadPreview = async () => {
       setIsLoadingUrl(true)
       setNoPreview(false)
+      setNetworkError(false)
       setPreviewUrl(null)
-      const url = await getPreviewUrl(title, artist, searchQuery, deezerId)
+      const result = await getPreviewUrl(title, artist, searchQuery, deezerId)
       if (cancelled) return
-      if (url) {
-        setPreviewUrl(url)
-      } else {
+      if (result.status === 'ok') {
+        setPreviewUrl(result.url)
+      } else if (result.status === 'no-preview') {
         setNoPreview(true)
+      } else {
+        setNetworkError(true)
       }
       setIsLoadingUrl(false)
     }
@@ -49,7 +54,7 @@ export default function SongPlayer({ title, artist, searchQuery, deezerId }: Pro
     return () => {
       cancelled = true
     }
-  }, [title, artist, searchQuery, deezerId])
+  }, [title, artist, searchQuery, deezerId, retryCount])
 
   // Configure the audio session once on mount
   useEffect(() => {
@@ -62,10 +67,13 @@ export default function SongPlayer({ title, artist, searchQuery, deezerId }: Pro
     if (status.playing) {
       player.pause()
     } else {
-      // Register as the active player — store will pause any other player
       setCurrentPlayer(player)
       player.play()
     }
+  }
+
+  const retryFetch = () => {
+    setRetryCount(c => c + 1)
   }
 
   const openInMusic = () => {
@@ -100,7 +108,11 @@ export default function SongPlayer({ title, artist, searchQuery, deezerId }: Pro
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.artist}>{artist}</Text>
         <View style={styles.previewRow}>
-          <Text style={styles.previewNote}>30 sec preview · </Text>
+          {networkError ? (
+            <Text style={styles.errorNote}>Connection issue · </Text>
+          ) : (
+            <Text style={styles.previewNote}>30 sec preview · </Text>
+          )}
           <TouchableOpacity onPress={openInMusic}>
             <Text style={styles.fullSongLink}>Full song ↗</Text>
           </TouchableOpacity>
@@ -108,6 +120,10 @@ export default function SongPlayer({ title, artist, searchQuery, deezerId }: Pro
       </View>
       {isLoading ? (
         <ActivityIndicator size="small" color="#2563eb" />
+      ) : networkError ? (
+        <TouchableOpacity onPress={retryFetch} style={styles.retryBtn}>
+          <Text style={styles.retryText}>Retry</Text>
+        </TouchableOpacity>
       ) : noPreview ? (
         <TouchableOpacity onPress={openInMusic} style={styles.noPreviewBtn}>
           <Text style={styles.noPreviewText}>Listen ↗</Text>
@@ -128,9 +144,12 @@ const styles = StyleSheet.create({
   artist: { fontSize: 13, color: '#94a3b8', marginTop: 2 },
   previewRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
   previewNote: { fontSize: 11, color: '#475569' },
+  errorNote: { fontSize: 11, color: '#f59e0b' },
   fullSongLink: { fontSize: 11, color: '#2563eb', textDecorationLine: 'underline' },
   playBtn: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, borderColor: '#334155', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0f172a' },
   playIcon: { fontSize: 16, color: '#2563eb' },
   noPreviewBtn: { padding: 8 },
   noPreviewText: { fontSize: 13, color: '#2563eb', textDecorationLine: 'underline' },
+  retryBtn: { paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, borderColor: '#f59e0b', borderRadius: 8 },
+  retryText: { fontSize: 12, color: '#f59e0b', fontWeight: '600' },
 })
