@@ -3,6 +3,7 @@ import { NavigationContainer } from '@react-navigation/native'
 import { createStackNavigator } from '@react-navigation/stack'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { useStatsStore } from './store/statsStore'
+import { useDailyStore } from './store/dailyStore'
 import HomeScreen from './screens/HomeScreen'
 import TurnIntroScreen from './screens/TurnIntroScreen'
 import GameScreen from './screens/GameScreen'
@@ -18,9 +19,11 @@ const Stack = createStackNavigator()
 
 export default function App() {
   const loadStats = useStatsStore(s => s.loadStats)
+  const loadDaily = useDailyStore(s => s.loadDaily)
 
   useEffect(() => {
     loadStats()
+    loadDaily()
   }, [])
 
   return (
