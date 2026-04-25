@@ -250,6 +250,13 @@ export default function HomeScreen({ navigation }: any) {
 
         <TouchableOpacity
           style={styles.privacyBtn}
+          onPress={() => navigation.navigate('Stats')}
+        >
+          <Text style={styles.privacyBtnText}>📊 Your Stats</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.privacyBtn}
           onPress={() => navigation.navigate('PrivacyPolicy')}
         >
           <Text style={styles.privacyBtnText}>Privacy Policy</Text>
