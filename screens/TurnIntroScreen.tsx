@@ -10,9 +10,11 @@ import { useGameStore } from '../store/gameStore'
 import { allBillboard } from '../data/billboard'
 import { preBillboardData } from '../data/billboard_pre1958'
 import { genreBillboard, getGenreYears } from '../data/genreBillboard'
+import { useIsPro } from '../store/purchaseStore'
 
 export default function TurnIntroScreen({ navigation }: any) {
   const { players, currentRoundNumber, totalRounds, setRound, decadeFilter, genreFilter } = useGameStore()
+  const isPro = useIsPro()
 
   const startRound = () => {
     let allYears: number[] = []
@@ -33,8 +35,13 @@ export default function TurnIntroScreen({ navigation }: any) {
       )
     }
 
+    // Free users only get songs from 1990 onward
+    if (!isPro) {
+      allYears = allYears.filter(y => y >= 1990)
+    }
+
     if (allYears.length === 0) {
-      allYears = Object.keys(allBillboard).map(Number)
+      allYears = Object.keys(allBillboard).map(Number).filter(y => isPro || y >= 1990)
     }
 
     const randomYear = allYears[Math.floor(Math.random() * allYears.length)]

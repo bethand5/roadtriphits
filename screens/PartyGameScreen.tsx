@@ -16,6 +16,7 @@ import { genreBillboard, getGenreYears } from '../data/genreBillboard'
 import { calculateYearScore, calculateRankingScore, DECADES } from '../utils/scoring'
 import SongPlayer from '../components/SongPlayer'
 import { useAudioStore } from '../store/audioStore'
+import { useIsPro } from '../store/purchaseStore'
 
 export default function PartyGameScreen({ navigation }: any) {
   const {
@@ -28,6 +29,7 @@ export default function PartyGameScreen({ navigation }: any) {
     decadeFilter,
     genreFilter,
   } = useGameStore()
+  const isPro = useIsPro()
 
   const [yearGuess, setYearGuess] = useState(1990)
   const [decadeGuess, setDecadeGuess] = useState<number | null>(null)
@@ -59,8 +61,13 @@ export default function PartyGameScreen({ navigation }: any) {
       )
     }
 
+    // Free users only get songs from 1990 onward
+    if (!isPro) {
+      allYears = allYears.filter(y => y >= 1990)
+    }
+
     if (allYears.length === 0) {
-      allYears = Object.keys(allBillboard).map(Number)
+      allYears = Object.keys(allBillboard).map(Number).filter(y => isPro || y >= 1990)
     }
 
     const randomYear = allYears[Math.floor(Math.random() * allYears.length)]

@@ -4,6 +4,7 @@ import { createStackNavigator } from '@react-navigation/stack'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { useStatsStore } from './store/statsStore'
 import { useDailyStore } from './store/dailyStore'
+import { usePurchaseStore } from './store/purchaseStore'
 import HomeScreen from './screens/HomeScreen'
 import TurnIntroScreen from './screens/TurnIntroScreen'
 import GameScreen from './screens/GameScreen'
@@ -16,16 +17,19 @@ import PrivacyPolicyScreen from './screens/PrivacyPolicyScreen'
 import StatsScreen from './screens/StatsScreen'
 import DailyChallengeScreen from './screens/DailyChallengeScreen'
 import DailyResultScreen from './screens/DailyResultScreen'
+import PaywallScreen from './screens/PaywallScreen'
 
 const Stack = createStackNavigator()
 
 export default function App() {
   const loadStats = useStatsStore(s => s.loadStats)
   const loadDaily = useDailyStore(s => s.loadDaily)
+  const loadPurchase = usePurchaseStore(s => s.loadPurchase)
 
   useEffect(() => {
     loadStats()
     loadDaily()
+    loadPurchase()
   }, [])
 
   return (
@@ -50,6 +54,7 @@ export default function App() {
           <Stack.Screen name="Stats" component={StatsScreen} />
           <Stack.Screen name="DailyChallenge" component={DailyChallengeScreen} options={{ gestureEnabled: false }} />
           <Stack.Screen name="DailyResult" component={DailyResultScreen} options={{ gestureEnabled: false }} />
+          <Stack.Screen name="Paywall" component={PaywallScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>

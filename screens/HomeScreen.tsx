@@ -12,6 +12,7 @@ import {
 import { useGameStore, GameMode, Difficulty } from '../store/gameStore'
 import { Genre } from '../data/billboard_pre1958'
 import { useDailyStore, getTodayKey } from '../store/dailyStore'
+import { useIsPro } from '../store/purchaseStore'
 
 const AVATARS = ['🎸', '🚗', '🎤', '🏎️', '🥁', '🚕', '🎹', '🛻', '🎺', '🚙', '🎻', '🎧']
 
@@ -38,6 +39,8 @@ const GENRES: { label: string; value: Genre }[] = [
 ]
 
 export default function HomeScreen({ navigation }: any) {
+  const isPro = useIsPro()
+
   const [players, setPlayers] = useState([
     { name: '', avatar: '🎸' },
     { name: '', avatar: '🚗' },
@@ -59,19 +62,46 @@ export default function HomeScreen({ navigation }: any) {
   const todayKey = getTodayKey()
   const todayResult = dailyHistory[todayKey]
 
+  // Free users default to easy + versus, no filters
   const [selectedMode, setSelectedMode] = useState<GameMode>('versus')
-  const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>('hard')
+  const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>(isPro ? 'hard' : 'easy')
   const [selectedDecades, setSelectedDecades] = useState<number[]>([])
   const [selectedGenres, setSelectedGenres] = useState<Genre[]>([])
   const [pickingAvatarFor, setPickingAvatarFor] = useState<number | null>(null)
 
+  const goToPaywall = () => navigation.navigate('Paywall')
+
+  const handleModeSelect = (mode: GameMode) => {
+    if (mode === 'party' && !isPro) {
+      goToPaywall()
+      return
+    }
+    setSelectedMode(mode)
+  }
+
+  const handleDifficultySelect = (key: Difficulty) => {
+    if ((key === 'medium' || key === 'hard') && !isPro) {
+      goToPaywall()
+      return
+    }
+    setSelectedDifficulty(key)
+  }
+
   const toggleDecade = (value: number) => {
+    if (!isPro) {
+      goToPaywall()
+      return
+    }
     setSelectedDecades(prev =>
       prev.includes(value) ? prev.filter(d => d !== value) : [...prev, value]
     )
   }
 
   const toggleGenre = (value: Genre) => {
+    if (!isPro) {
+      goToPaywall()
+      return
+    }
     setSelectedGenres(prev =>
       prev.includes(value) ? prev.filter(g => g !== value) : [...prev, value]
     )
@@ -122,10 +152,10 @@ export default function HomeScreen({ navigation }: any) {
   const validPlayers = players.filter(p => p.name.trim() !== '')
   const canStart = selectedMode === 'party' ? true : validPlayers.length >= 2
 
-  const difficulties = [
-    { key: 'easy',   label: '🟢 Easy',   desc: 'Guess the decade' },
-    { key: 'medium', label: '🟡 Medium', desc: 'Within 5 years' },
-    { key: 'hard',   label: '🔴 Hard',   desc: 'Exact year' },
+  const difficulties: { key: Difficulty; label: string; desc: string; locked: boolean }[] = [
+    { key: 'easy',   label: '🟢 Easy',   desc: 'Guess the decade',  locked: false },
+    { key: 'medium', label: '🟡 Medium', desc: 'Within 5 years',    locked: !isPro },
+    { key: 'hard',   label: '🔴 Hard',   desc: 'Exact year',        locked: !isPro },
   ]
 
   return (
@@ -134,6 +164,14 @@ export default function HomeScreen({ navigation }: any) {
         <Text style={styles.emoji}>🚗</Text>
         <Text style={styles.title}>Road Trip Hits</Text>
         <Text style={styles.subtitle}>Guess the year, rank the songs</Text>
+
+        {!isPro && (
+          <TouchableOpacity style={styles.upgradeCard} onPress={goToPaywall}>
+            <Text style={styles.upgradeBadge}>✨ UPGRADE TO PRO</Text>
+            <Text style={styles.upgradeTitle}>Unlock everything for $2.99</Text>
+            <Text style={styles.upgradeSub}>Party mode, hard difficulty, all eras, filters & more</Text>
+          </TouchableOpacity>
+        )}
 
         <TouchableOpacity
           style={styles.dailyCard}
@@ -162,17 +200,21 @@ export default function HomeScreen({ navigation }: any) {
         <View style={styles.modeRow}>
           <TouchableOpacity
             style={[styles.modeBtn, selectedMode === 'versus' && styles.modeBtnActive]}
-            onPress={() => setSelectedMode('versus')}
+            onPress={() => handleModeSelect('versus')}
           >
             <Text style={[styles.modeBtnText, selectedMode === 'versus' && styles.modeBtnTextActive]}>⚔️ Versus</Text>
             <Text style={[styles.modeDesc, selectedMode === 'versus' && styles.modeDescActive]}>Compete for the high score</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.modeBtn, selectedMode === 'party' && styles.modeBtnActive]}
-            onPress={() => setSelectedMode('party')}
+            style={[styles.modeBtn, selectedMode === 'party' && styles.modeBtnActive, !isPro && styles.modeBtnLocked]}
+            onPress={() => handleModeSelect('party')}
           >
-            <Text style={[styles.modeBtnText, selectedMode === 'party' && styles.modeBtnTextActive]}>🎉 Party</Text>
-            <Text style={[styles.modeDesc, selectedMode === 'party' && styles.modeDescActive]}>Play together as a group</Text>
+            <Text style={[styles.modeBtnText, selectedMode === 'party' && styles.modeBtnTextActive]}>
+              {!isPro && '🔒 '}🎉 Party
+            </Text>
+            <Text style={[styles.modeDesc, selectedMode === 'party' && styles.modeDescActive]}>
+              {!isPro ? 'Pro only — tap to unlock' : 'Play together as a group'}
+            </Text>
           </TouchableOpacity>
         </View>
 
@@ -180,23 +222,37 @@ export default function HomeScreen({ navigation }: any) {
         {difficulties.map(d => (
           <TouchableOpacity
             key={d.key}
-            style={[styles.diffBtn, selectedDifficulty === d.key && styles.diffBtnActive]}
-            onPress={() => setSelectedDifficulty(d.key as Difficulty)}
+            style={[
+              styles.diffBtn,
+              selectedDifficulty === d.key && styles.diffBtnActive,
+              d.locked && styles.diffBtnLocked,
+            ]}
+            onPress={() => handleDifficultySelect(d.key)}
           >
-            <Text style={[styles.diffLabel, selectedDifficulty === d.key && styles.diffLabelActive]}>{d.label}</Text>
-            <Text style={[styles.diffDesc, selectedDifficulty === d.key && styles.diffDescActive]}>{d.desc}</Text>
+            <Text style={[styles.diffLabel, selectedDifficulty === d.key && styles.diffLabelActive]}>
+              {d.locked && '🔒 '}{d.label}
+            </Text>
+            <Text style={[styles.diffDesc, selectedDifficulty === d.key && styles.diffDescActive]}>
+              {d.locked ? 'Pro only' : d.desc}
+            </Text>
           </TouchableOpacity>
         ))}
 
         <Text style={styles.sectionLabel}>
-          Decades{selectedDecades.length === 0 ? ' (all)' : ` (${selectedDecades.length} selected)`}
+          Decades{!isPro ? ' 🔒' : selectedDecades.length === 0 ? ' (all)' : ` (${selectedDecades.length} selected)`}
         </Text>
-        <Text style={styles.filterHint}>Tap to select — leave all unselected for every era</Text>
+        <Text style={styles.filterHint}>
+          {!isPro ? 'Pro only — tap to unlock filters' : 'Tap to select — leave all unselected for every era'}
+        </Text>
         <View style={styles.pillGrid}>
           {DECADES.map(d => (
             <TouchableOpacity
               key={d.value}
-              style={[styles.pill, selectedDecades.includes(d.value) && styles.pillActive]}
+              style={[
+                styles.pill,
+                selectedDecades.includes(d.value) && styles.pillActive,
+                !isPro && styles.pillLocked,
+              ]}
               onPress={() => toggleDecade(d.value)}
             >
               <Text style={[styles.pillText, selectedDecades.includes(d.value) && styles.pillTextActive]}>
@@ -207,14 +263,20 @@ export default function HomeScreen({ navigation }: any) {
         </View>
 
         <Text style={styles.sectionLabel}>
-          Genres{selectedGenres.length === 0 ? ' (all)' : ` (${selectedGenres.length} selected)`}
+          Genres{!isPro ? ' 🔒' : selectedGenres.length === 0 ? ' (all)' : ` (${selectedGenres.length} selected)`}
         </Text>
-        <Text style={styles.filterHint}>Leave all unselected for every genre</Text>
+        <Text style={styles.filterHint}>
+          {!isPro ? 'Pro only — tap to unlock filters' : 'Leave all unselected for every genre'}
+        </Text>
         <View style={styles.pillGrid}>
           {GENRES.map(g => (
             <TouchableOpacity
               key={g.value}
-              style={[styles.pill, selectedGenres.includes(g.value) && styles.pillActive]}
+              style={[
+                styles.pill,
+                selectedGenres.includes(g.value) && styles.pillActive,
+                !isPro && styles.pillLocked,
+              ]}
               onPress={() => toggleGenre(g.value)}
             >
               <Text style={[styles.pillText, selectedGenres.includes(g.value) && styles.pillTextActive]}>
@@ -331,6 +393,31 @@ const styles = StyleSheet.create({
   emoji: { fontSize: 48, textAlign: 'center', marginTop: 20 },
   title: { fontSize: 28, fontWeight: '700', textAlign: 'center', marginTop: 8, color: '#f1f5f9' },
   subtitle: { fontSize: 15, color: '#94a3b8', textAlign: 'center', marginTop: 4, marginBottom: 24 },
+  upgradeCard: {
+    backgroundColor: '#1e293b',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#f59e0b',
+  },
+  upgradeBadge: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#f59e0b',
+    letterSpacing: 0.8,
+    marginBottom: 6,
+  },
+  upgradeTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#f1f5f9',
+    marginBottom: 4,
+  },
+  upgradeSub: {
+    fontSize: 13,
+    color: '#94a3b8',
+  },
   dailyCard: {
     backgroundColor: '#172554',
     borderRadius: 16,
@@ -371,12 +458,14 @@ const styles = StyleSheet.create({
   modeRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
   modeBtn: { flex: 1, padding: 14, borderWidth: 1, borderColor: '#1e293b', borderRadius: 12, alignItems: 'center', backgroundColor: '#1e293b' },
   modeBtnActive: { backgroundColor: '#2563eb', borderColor: '#2563eb' },
+  modeBtnLocked: { opacity: 0.6 },
   modeBtnText: { fontSize: 15, fontWeight: '600', color: '#94a3b8' },
   modeBtnTextActive: { color: '#fff' },
   modeDesc: { fontSize: 12, color: '#475569', marginTop: 4, textAlign: 'center' },
   modeDescActive: { color: '#bcd4f7' },
   diffBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14, borderWidth: 1, borderColor: '#1e293b', borderRadius: 12, marginBottom: 8, backgroundColor: '#1e293b' },
   diffBtnActive: { backgroundColor: '#2563eb', borderColor: '#2563eb' },
+  diffBtnLocked: { opacity: 0.6 },
   diffLabel: { fontSize: 15, fontWeight: '600', color: '#94a3b8' },
   diffLabelActive: { color: '#fff' },
   diffDesc: { fontSize: 13, color: '#475569' },
@@ -384,6 +473,7 @@ const styles = StyleSheet.create({
   pillGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
   pill: { paddingVertical: 8, paddingHorizontal: 14, borderWidth: 1, borderColor: '#1e293b', borderRadius: 10, backgroundColor: '#1e293b' },
   pillActive: { backgroundColor: '#2563eb', borderColor: '#2563eb' },
+  pillLocked: { opacity: 0.5 },
   pillText: { fontSize: 14, color: '#94a3b8' },
   pillTextActive: { color: '#fff', fontWeight: '600' },
   inputRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },

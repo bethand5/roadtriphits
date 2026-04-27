@@ -10,6 +10,7 @@ import {
 } from 'react-native'
 import { useStatsStore } from '../store/statsStore'
 import { useDailyStore } from '../store/dailyStore'
+import { usePurchaseStore } from '../store/purchaseStore'
 
 export default function StatsScreen({ navigation }: any) {
   const {
@@ -28,6 +29,9 @@ export default function StatsScreen({ navigation }: any) {
     isLoaded: dailyLoaded,
   } = useDailyStore()
 
+  const isPro = usePurchaseStore(s => s.isPro)
+  const setPro = usePurchaseStore(s => s.setPro)
+
   const totalDailyPlayed = Object.keys(dailyHistory).length
 
   const confirmReset = () => {
@@ -43,6 +47,10 @@ export default function StatsScreen({ navigation }: any) {
         },
       ]
     )
+  }
+
+  const togglePro = () => {
+    setPro(!isPro)
   }
 
   const hasPlayedAnyGames = totalGamesPlayed > 0
@@ -129,6 +137,16 @@ export default function StatsScreen({ navigation }: any) {
             </TouchableOpacity>
           </>
         )}
+
+        {/* DEV TOGGLE — REMOVE BEFORE LAUNCH */}
+        <View style={styles.devBox}>
+          <Text style={styles.devLabel}>DEV ONLY · REMOVE BEFORE LAUNCH</Text>
+          <TouchableOpacity style={styles.devBtn} onPress={togglePro}>
+            <Text style={styles.devBtnText}>
+              Pro: {isPro ? 'ON ✓' : 'OFF'} · Tap to toggle
+            </Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </SafeAreaView>
   )
@@ -183,4 +201,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   resetBtnText: { fontSize: 14, color: '#f87171' },
+  devBox: {
+    marginTop: 32,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#f59e0b',
+    borderStyle: 'dashed',
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  devLabel: {
+    fontSize: 10,
+    color: '#f59e0b',
+    fontWeight: '700',
+    letterSpacing: 1,
+    marginBottom: 10,
+  },
+  devBtn: {
+    padding: 10,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: '#f59e0b',
+    borderRadius: 8,
+  },
+  devBtnText: { fontSize: 14, color: '#f59e0b', fontWeight: '600' },
 })
