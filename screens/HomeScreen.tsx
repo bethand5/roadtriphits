@@ -62,8 +62,8 @@ export default function HomeScreen({ navigation }: any) {
   const todayKey = getTodayKey()
   const todayResult = dailyHistory[todayKey]
 
-  // Free users default to easy + versus, no filters
-  const [selectedMode, setSelectedMode] = useState<GameMode>('versus')
+  // Free users default to Party mode (Versus is Pro-only)
+  const [selectedMode, setSelectedMode] = useState<GameMode>(isPro ? 'versus' : 'party')
   const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>(isPro ? 'hard' : 'easy')
   const [selectedDecades, setSelectedDecades] = useState<number[]>([])
   const [selectedGenres, setSelectedGenres] = useState<Genre[]>([])
@@ -72,7 +72,7 @@ export default function HomeScreen({ navigation }: any) {
   const goToPaywall = () => navigation.navigate('Paywall')
 
   const handleModeSelect = (mode: GameMode) => {
-    if (mode === 'party' && !isPro) {
+    if (mode === 'versus' && !isPro) {
       goToPaywall()
       return
     }
@@ -169,7 +169,7 @@ export default function HomeScreen({ navigation }: any) {
           <TouchableOpacity style={styles.upgradeCard} onPress={goToPaywall}>
             <Text style={styles.upgradeBadge}>✨ UPGRADE TO PRO</Text>
             <Text style={styles.upgradeTitle}>Unlock everything for $2.99</Text>
-            <Text style={styles.upgradeSub}>Party mode, hard difficulty, all eras, filters & more</Text>
+            <Text style={styles.upgradeSub}>Versus mode, hard difficulty, all eras, filters & hints</Text>
           </TouchableOpacity>
         )}
 
@@ -199,21 +199,21 @@ export default function HomeScreen({ navigation }: any) {
         <Text style={styles.sectionLabel}>Mode</Text>
         <View style={styles.modeRow}>
           <TouchableOpacity
-            style={[styles.modeBtn, selectedMode === 'versus' && styles.modeBtnActive]}
-            onPress={() => handleModeSelect('versus')}
-          >
-            <Text style={[styles.modeBtnText, selectedMode === 'versus' && styles.modeBtnTextActive]}>⚔️ Versus</Text>
-            <Text style={[styles.modeDesc, selectedMode === 'versus' && styles.modeDescActive]}>Compete for the high score</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.modeBtn, selectedMode === 'party' && styles.modeBtnActive, !isPro && styles.modeBtnLocked]}
+            style={[styles.modeBtn, selectedMode === 'party' && styles.modeBtnActive]}
             onPress={() => handleModeSelect('party')}
           >
-            <Text style={[styles.modeBtnText, selectedMode === 'party' && styles.modeBtnTextActive]}>
-              {!isPro && '🔒 '}🎉 Party
+            <Text style={[styles.modeBtnText, selectedMode === 'party' && styles.modeBtnTextActive]}>🎉 Party</Text>
+            <Text style={[styles.modeDesc, selectedMode === 'party' && styles.modeDescActive]}>Play together as a group</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.modeBtn, selectedMode === 'versus' && styles.modeBtnActive, !isPro && styles.modeBtnLocked]}
+            onPress={() => handleModeSelect('versus')}
+          >
+            <Text style={[styles.modeBtnText, selectedMode === 'versus' && styles.modeBtnTextActive]}>
+              {!isPro && '🔒 '}⚔️ Versus
             </Text>
-            <Text style={[styles.modeDesc, selectedMode === 'party' && styles.modeDescActive]}>
-              {!isPro ? 'Pro only — tap to unlock' : 'Play together as a group'}
+            <Text style={[styles.modeDesc, selectedMode === 'versus' && styles.modeDescActive]}>
+              {!isPro ? 'Pro only — tap to unlock' : 'Compete for the high score'}
             </Text>
           </TouchableOpacity>
         </View>

@@ -11,7 +11,7 @@ import { useGameStore } from '../store/gameStore'
 import { useStatsStore } from '../store/statsStore'
 
 export default function LeaderboardScreen({ navigation }: any) {
-  const { players, resetGame, totalRounds, difficulty, maxStreakInGame, setTotalRounds, setGameMode, setDifficulty } = useGameStore()
+  const { players, resetGame, totalRounds, difficulty, maxStreaksInGame, setTotalRounds, setGameMode, setDifficulty } = useGameStore()
   const recordVersusGame = useStatsStore(s => s.recordVersusGame)
 
   const sorted = [...players].sort((a, b) => b.score - a.score)
@@ -20,7 +20,9 @@ export default function LeaderboardScreen({ navigation }: any) {
 
   useEffect(() => {
     if (winner) {
-      recordVersusGame(winner.score, maxStreakInGame)
+      // Best streak across all players this game
+      const bestStreak = maxStreaksInGame.length > 0 ? Math.max(...maxStreaksInGame) : 0
+      recordVersusGame(winner.score, bestStreak)
     }
   }, [])
 

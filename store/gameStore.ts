@@ -34,12 +34,14 @@ interface GameState {
   genreFilter: Genre[]
   partyScore: number
   partyMaxScore: number
-  streak: number
-  maxStreakInGame: number
+  // Per-player streaks (parallel array to players)
+  streaks: number[]
+  maxStreaksInGame: number[]
   setPlayers: (names: string[]) => void
   setTotalRounds: (n: number) => void
   setRound: (round: Round) => void
   addScore: (points: number) => void
+  addScoreToPlayer: (playerIndex: number, points: number) => void
   addPartyScore: (points: number, maxPoints: number) => void
   nextPlayer: () => void
   nextPartyRound: () => void
@@ -47,8 +49,8 @@ interface GameState {
   setDifficulty: (difficulty: Difficulty) => void
   setDecadeFilter: (decades: number[]) => void
   setGenreFilter: (genres: Genre[]) => void
-  incrementStreak: () => void
-  resetStreak: () => void
+  incrementStreakForPlayer: (playerIndex: number) => void
+  resetStreakForPlayer: (playerIndex: number) => void
   resetGame: () => void
 }
 
@@ -64,11 +66,15 @@ export const useGameStore = create<GameState>((set) => ({
   genreFilter: [],
   partyScore: 0,
   partyMaxScore: 0,
-  streak: 0,
-  maxStreakInGame: 0,
+  streaks: [],
+  maxStreaksInGame: [],
 
   setPlayers: (names) =>
-    set({ players: names.map(name => ({ name, score: 0 })) }),
+    set({
+      players: names.map(name => ({ name, score: 0 })),
+      streaks: names.map(() => 0),
+      maxStreaksInGame: names.map(() => 0),
+    }),
 
   setTotalRounds: (n) => set({ totalRounds: n }),
 
@@ -89,22 +95,43 @@ export const useGameStore = create<GameState>((set) => ({
       return { players }
     }),
 
+  addScoreToPlayer: (playerIndex, points) =>
+    set(state => {
+      const players = [...state.players]
+      if (players[playerIndex]) {
+        players[playerIndex].score += points
+      }
+      return { players }
+    }),
+
   addPartyScore: (points, maxPoints) =>
     set(state => ({
       partyScore: state.partyScore + points,
       partyMaxScore: state.partyMaxScore + maxPoints,
     })),
 
-  incrementStreak: () =>
+  incrementStreakForPlayer: (playerIndex) =>
     set(state => {
-      const newStreak = state.streak + 1
-      return {
-        streak: newStreak,
-        maxStreakInGame: Math.max(state.maxStreakInGame, newStreak),
+      const streaks = [...state.streaks]
+      const maxStreaksInGame = [...state.maxStreaksInGame]
+      if (streaks[playerIndex] !== undefined) {
+        streaks[playerIndex] += 1
+        maxStreaksInGame[playerIndex] = Math.max(
+          maxStreaksInGame[playerIndex] ?? 0,
+          streaks[playerIndex]
+        )
       }
+      return { streaks, maxStreaksInGame }
     }),
 
-  resetStreak: () => set({ streak: 0 }),
+  resetStreakForPlayer: (playerIndex) =>
+    set(state => {
+      const streaks = [...state.streaks]
+      if (streaks[playerIndex] !== undefined) {
+        streaks[playerIndex] = 0
+      }
+      return { streaks }
+    }),
 
   nextPlayer: () =>
     set(state => {
@@ -128,8 +155,8 @@ export const useGameStore = create<GameState>((set) => ({
       currentRoundNumber: 1,
       partyScore: 0,
       partyMaxScore: 0,
-      streak: 0,
-      maxStreakInGame: 0,
+      streaks: [],
+      maxStreaksInGame: [],
       decadeFilter: [],
       genreFilter: [],
     }),

@@ -12,10 +12,10 @@ import {
 import { usePurchaseStore } from '../store/purchaseStore'
 
 const FEATURES = [
+  { emoji: '⚔️', title: 'Versus mode', desc: 'Solo high scores, streaks, and rematches' },
   { emoji: '🎯', title: 'Medium & Hard difficulty', desc: 'Guess the exact year, not just the decade' },
-  { emoji: '🎉', title: 'Party mode', desc: 'Cooperative play for the whole group' },
-  { emoji: '🎚️', title: 'Decade & genre filters', desc: 'Pick the era and style you want' },
   { emoji: '🎵', title: 'Songs from 1935–1989', desc: 'The full library, not just the modern era' },
+  { emoji: '🎚️', title: 'Decade & genre filters', desc: 'Pick the era and style you want' },
   { emoji: '💡', title: 'Hint system', desc: 'Reveal the decade when you\'re stuck' },
 ]
 

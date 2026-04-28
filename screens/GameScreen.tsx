@@ -15,7 +15,15 @@ import SongPlayer from '../components/SongPlayer'
 import { useAudioStore } from '../store/audioStore'
 
 export default function GameScreen({ navigation }: any) {
-  const { currentRound, players, difficulty, streak, incrementStreak, resetStreak, addScore } = useGameStore()
+  const {
+    currentRound,
+    players,
+    difficulty,
+    streaks,
+    incrementStreakForPlayer,
+    resetStreakForPlayer,
+    addScoreToPlayer,
+  } = useGameStore()
 
   const [playerGuesses, setPlayerGuesses] = useState<any[]>([])
 
@@ -84,20 +92,22 @@ export default function GameScreen({ navigation }: any) {
 
     useAudioStore.getState().stopCurrent()
 
-    const results = playerGuesses.map((guess) => {
+    const results = playerGuesses.map((guess, playerIndex) => {
       const yearVal = difficulty === 'easy' ? guess.decadeGuess! : guess.yearGuess
       const yearScore = calculateYearScore(currentRound.year, yearVal, difficulty)
       const rankScore = calculateRankingScore(currentRound.songs, guess.rankedSongs)
-      const streakBonus = yearScore > 0 ? getStreakBonus(streak + 1) : 0
+      // Streak bonus uses THIS player's streak, +1 if they just got it right
+      const playerStreak = streaks[playerIndex] ?? 0
+      const streakBonus = yearScore > 0 ? getStreakBonus(playerStreak + 1) : 0
       const hintPenalty = guess.hintUsed ? 3 : 0
       const total = Math.max(0, yearScore + rankScore + streakBonus - hintPenalty)
       return { yearScore, rankScore, streakBonus, hintUsed: guess.hintUsed, yearGuess: yearVal, rankedSongs: guess.rankedSongs, total }
     })
 
-    results.forEach(r => {
-      if (r.yearScore > 0) incrementStreak()
-      else resetStreak()
-      addScore(r.total)
+    results.forEach((r, playerIndex) => {
+      if (r.yearScore > 0) incrementStreakForPlayer(playerIndex)
+      else resetStreakForPlayer(playerIndex)
+      addScoreToPlayer(playerIndex, r.total)
     })
 
     navigation.navigate('RoundResult', { results })
@@ -114,91 +124,94 @@ export default function GameScreen({ navigation }: any) {
           <SongPlayer key={index} title={song.title} artist={song.artist} searchQuery={song.searchQuery} deezerId={song.deezerId} />
         ))}
 
-        {players.map((player, playerIndex) => (
-          <View key={playerIndex} style={styles.playerSection}>
-            <View style={styles.playerHeader}>
-              <Text style={styles.playerName}>{player.name}</Text>
-            </View>
-
-            {streak >= 2 && playerIndex === 0 && (
-              <View style={styles.streakBanner}>
-                <Text style={styles.streakText}>🔥 {streak} round streak!</Text>
+        {players.map((player, playerIndex) => {
+          const playerStreak = streaks[playerIndex] ?? 0
+          return (
+            <View key={playerIndex} style={styles.playerSection}>
+              <View style={styles.playerHeader}>
+                <Text style={styles.playerName}>{player.name}</Text>
               </View>
-            )}
 
-            <Text style={styles.subLabel}>Rank the songs</Text>
-            {playerGuesses[playerIndex].rankedSongs.map((song: any, songIndex: number) => (
-              <View key={song.title} style={styles.rankCard}>
-                <Text style={styles.rankNum}>#{songIndex + 1}</Text>
-                <View style={styles.rankInfo}>
-                  <Text style={styles.rankTitle}>{song.title}</Text>
-                  <Text style={styles.rankArtist}>{song.artist}</Text>
+              {playerStreak >= 2 && (
+                <View style={styles.streakBanner}>
+                  <Text style={styles.streakText}>🔥 {playerStreak} round streak!</Text>
                 </View>
-                <View style={styles.arrows}>
-                  <TouchableOpacity onPress={() => moveSong(playerIndex, songIndex, 'up')} style={styles.arrowBtn}>
-                    <Text style={styles.arrowText}>▲</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => moveSong(playerIndex, songIndex, 'down')} style={styles.arrowBtn}>
-                    <Text style={styles.arrowText}>▼</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ))}
+              )}
 
-            {!playerGuesses[playerIndex].hintUsed && difficulty !== 'easy' && (
-              <TouchableOpacity style={styles.hintBtn} onPress={() => useHint(playerIndex)}>
-                <Text style={styles.hintBtnText}>💡 Use hint (-3 pts)</Text>
-              </TouchableOpacity>
-            )}
-
-            {playerGuesses[playerIndex].hintUsed && (
-              <View style={styles.hintBox}>
-                <Text style={styles.hintBoxText}>💡 {playerGuesses[playerIndex].hintText}</Text>
-              </View>
-            )}
-
-            {difficulty === 'easy' ? (
-              <>
-                <Text style={styles.subLabel}>Pick a decade</Text>
-                <View style={styles.decadeGrid}>
-                  {DECADES.map(d => (
-                    <TouchableOpacity
-                      key={d.value}
-                      style={[styles.decadeBtn, playerGuesses[playerIndex].decadeGuess === d.value && styles.decadeBtnActive]}
-                      onPress={() => updateGuess(playerIndex, 'decadeGuess', d.value)}
-                    >
-                      <Text style={[styles.decadeBtnText, playerGuesses[playerIndex].decadeGuess === d.value && styles.decadeBtnTextActive]}>
-                        {d.label}
-                      </Text>
+              <Text style={styles.subLabel}>Rank the songs</Text>
+              {playerGuesses[playerIndex].rankedSongs.map((song: any, songIndex: number) => (
+                <View key={song.title} style={styles.rankCard}>
+                  <Text style={styles.rankNum}>#{songIndex + 1}</Text>
+                  <View style={styles.rankInfo}>
+                    <Text style={styles.rankTitle}>{song.title}</Text>
+                    <Text style={styles.rankArtist}>{song.artist}</Text>
+                  </View>
+                  <View style={styles.arrows}>
+                    <TouchableOpacity onPress={() => moveSong(playerIndex, songIndex, 'up')} style={styles.arrowBtn}>
+                      <Text style={styles.arrowText}>▲</Text>
                     </TouchableOpacity>
-                  ))}
+                    <TouchableOpacity onPress={() => moveSong(playerIndex, songIndex, 'down')} style={styles.arrowBtn}>
+                      <Text style={styles.arrowText}>▼</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
-              </>
-            ) : (
-              <>
-                <Text style={styles.subLabel}>
-                  Year guess: {playerGuesses[playerIndex].yearGuess}
-                  {difficulty === 'medium' ? ' (within 5 years)' : ''}
-                </Text>
-                <Slider
-                  style={styles.slider}
-                  minimumValue={1935}
-                  maximumValue={2024}
-                  step={1}
-                  value={playerGuesses[playerIndex].yearGuess}
-                  onValueChange={(val) => updateGuess(playerIndex, 'yearGuess', Math.round(val))}
-                  minimumTrackTintColor="#2563eb"
-                  maximumTrackTintColor="#334155"
-                  thumbTintColor="#2563eb"
-                />
-                <View style={styles.sliderLabels}>
-                  <Text style={styles.sliderLabel}>1935</Text>
-                  <Text style={styles.sliderLabel}>2024</Text>
+              ))}
+
+              {!playerGuesses[playerIndex].hintUsed && difficulty !== 'easy' && (
+                <TouchableOpacity style={styles.hintBtn} onPress={() => useHint(playerIndex)}>
+                  <Text style={styles.hintBtnText}>💡 Use hint (-3 pts)</Text>
+                </TouchableOpacity>
+              )}
+
+              {playerGuesses[playerIndex].hintUsed && (
+                <View style={styles.hintBox}>
+                  <Text style={styles.hintBoxText}>💡 {playerGuesses[playerIndex].hintText}</Text>
                 </View>
-              </>
-            )}
-          </View>
-        ))}
+              )}
+
+              {difficulty === 'easy' ? (
+                <>
+                  <Text style={styles.subLabel}>Pick a decade</Text>
+                  <View style={styles.decadeGrid}>
+                    {DECADES.map(d => (
+                      <TouchableOpacity
+                        key={d.value}
+                        style={[styles.decadeBtn, playerGuesses[playerIndex].decadeGuess === d.value && styles.decadeBtnActive]}
+                        onPress={() => updateGuess(playerIndex, 'decadeGuess', d.value)}
+                      >
+                        <Text style={[styles.decadeBtnText, playerGuesses[playerIndex].decadeGuess === d.value && styles.decadeBtnTextActive]}>
+                          {d.label}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </>
+              ) : (
+                <>
+                  <Text style={styles.subLabel}>
+                    Year guess: {playerGuesses[playerIndex].yearGuess}
+                    {difficulty === 'medium' ? ' (within 5 years)' : ''}
+                  </Text>
+                  <Slider
+                    style={styles.slider}
+                    minimumValue={1935}
+                    maximumValue={2024}
+                    step={1}
+                    value={playerGuesses[playerIndex].yearGuess}
+                    onValueChange={(val) => updateGuess(playerIndex, 'yearGuess', Math.round(val))}
+                    minimumTrackTintColor="#2563eb"
+                    maximumTrackTintColor="#334155"
+                    thumbTintColor="#2563eb"
+                  />
+                  <View style={styles.sliderLabels}>
+                    <Text style={styles.sliderLabel}>1935</Text>
+                    <Text style={styles.sliderLabel}>2024</Text>
+                  </View>
+                </>
+              )}
+            </View>
+          )
+        })}
 
         <TouchableOpacity style={styles.submitBtn} onPress={submitAll}>
           <Text style={styles.submitBtnText}>Submit all answers</Text>
