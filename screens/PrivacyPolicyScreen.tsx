@@ -28,10 +28,18 @@ export default function PrivacyPolicyScreen({ navigation }: any) {
 
         <Text style={styles.heading}>Data We Collect</Text>
         <Text style={styles.body}>
-          Road Trip Hits does not collect, store, or transmit any personal information. The app does not require you to create an account or log in.
+          Road Trip Hits does not collect, store, or transmit any personal information directly. The app does not require you to create an account or log in.
         </Text>
         <Text style={styles.body}>
-          Player names entered during gameplay are stored only on your device for the duration of the game session and are never sent to any server.
+          Player names, scores, and game history are stored only on your device using local storage. This data is never sent to any server we control.
+        </Text>
+
+        <Text style={styles.heading}>In-App Purchases</Text>
+        <Text style={styles.body}>
+          Road Trip Hits offers a one-time in-app purchase ("Road Trip Hits Pro") to unlock additional features. Purchase processing is handled entirely by Apple through the App Store. We do not receive or store your payment information, credit card details, or Apple ID.
+        </Text>
+        <Text style={styles.body}>
+          We use RevenueCat to manage in-app purchase state. RevenueCat receives an anonymous identifier (no name, email, or account information) and the fact that a purchase was completed.
         </Text>
 
         <Text style={styles.heading}>Music Previews</Text>
@@ -46,7 +54,7 @@ export default function PrivacyPolicyScreen({ navigation }: any) {
 
         <Text style={styles.heading}>Children's Privacy</Text>
         <Text style={styles.body}>
-          Road Trip Hits does not knowingly collect any information from children under 13. Since we collect no personal data at all, the app is safe for all ages.
+          Road Trip Hits does not knowingly collect any information from children under 13. Since we collect no personal data directly, the app is safe for all ages. The app contains no third-party advertising and no social or chat features.
         </Text>
 
         <Text style={styles.heading}>Changes to This Policy</Text>
@@ -65,14 +73,14 @@ export default function PrivacyPolicyScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#e0e0e0' },
+  container: { flex: 1, backgroundColor: '#0f172a' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#1e293b' },
   backBtn: { width: 60 },
-  backText: { fontSize: 16, color: '#111' },
-  headerTitle: { fontSize: 16, fontWeight: '600', color: '#111' },
+  backText: { fontSize: 16, color: '#2563eb' },
+  headerTitle: { fontSize: 16, fontWeight: '600', color: '#f1f5f9' },
   scroll: { padding: 24 },
-  updated: { fontSize: 12, color: '#aaa', marginBottom: 16 },
-  heading: { fontSize: 16, fontWeight: '700', color: '#111', marginTop: 24, marginBottom: 8 },
-  body: { fontSize: 14, color: '#555', lineHeight: 22, marginBottom: 8 },
-  email: { fontSize: 14, color: '#111', fontWeight: '600', marginTop: 4 },
+  updated: { fontSize: 12, color: '#475569', marginBottom: 16 },
+  heading: { fontSize: 16, fontWeight: '700', color: '#f1f5f9', marginTop: 24, marginBottom: 8 },
+  body: { fontSize: 14, color: '#94a3b8', lineHeight: 22, marginBottom: 8 },
+  email: { fontSize: 14, color: '#2563eb', fontWeight: '600', marginTop: 4 },
 })
