@@ -19,7 +19,6 @@ export default function DailyResultScreen({ navigation, route }: any) {
   // Play sound only on a fresh result, not when revisiting a played day
   useEffect(() => {
     if (alreadyPlayed) return
-    // Approximate the score split for the sound effect
     const yearOnlyScore = yearGuess !== null
       ? Math.max(0, Math.min(10, score - (rankedSongs?.length ? 0 : 0)))
       : 0
@@ -27,9 +26,22 @@ export default function DailyResultScreen({ navigation, route }: any) {
     playResultSound(rankOnlyScore, yearOnlyScore)
   }, [])
 
-  const yearDiff = yearGuess !== null
+  const yearDiff = yearGuess !== null && yearGuess !== undefined
     ? Math.abs(year - (typeof yearGuess === 'number' ? yearGuess : parseInt(yearGuess)))
     : null
+
+  // For each position in user's ranking, was that song actually at that position?
+  const getRankCorrectness = (userIndex: number): boolean => {
+    if (!rankedSongs || !actualSongs) return false
+    const userSong = rankedSongs[userIndex]
+    const actualSong = actualSongs[userIndex]
+    if (!userSong || !actualSong) return false
+    return userSong.title === actualSong.title
+  }
+
+  const correctRanks = rankedSongs && actualSongs
+    ? rankedSongs.filter((_: any, i: number) => getRankCorrectness(i)).length
+    : 0
 
   const getMessage = () => {
     if (score === 19) return "Perfect daily! 🎯"
@@ -39,7 +51,6 @@ export default function DailyResultScreen({ navigation, route }: any) {
     return "Better luck tomorrow 😅"
   }
 
-  // Spoiler-free share text — no song titles, no exact year
   const buildShareText = () => {
     const todayLabel = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     const scoreEmoji = score === 19 ? '🎯' : score >= 15 ? '🔥' : score >= 10 ? '👍' : score >= 5 ? '🎵' : '😅'
@@ -54,6 +65,9 @@ export default function DailyResultScreen({ navigation, route }: any) {
       console.log('Share error:', e)
     }
   }
+
+  const showRankingComparison = rankedSongs && rankedSongs.length > 0 && actualSongs && actualSongs.length > 0
+  const showYearDetail = yearGuess !== null && yearGuess !== undefined && yearDiff !== null
 
   return (
     <SafeAreaView style={styles.container}>
@@ -81,7 +95,7 @@ export default function DailyResultScreen({ navigation, route }: any) {
           </View>
         </View>
 
-        {!alreadyPlayed && yearGuess !== null && (
+        {showYearDetail && (
           <View style={styles.detailsCard}>
             <Text style={styles.detailsLabel}>The answer</Text>
             <Text style={styles.detailsValue}>{year}</Text>
@@ -91,8 +105,31 @@ export default function DailyResultScreen({ navigation, route }: any) {
           </View>
         )}
 
+        {showRankingComparison && (
+          <View style={styles.compareCard}>
+            <Text style={styles.compareLabel}>
+              Your ranking — {correctRanks}/{rankedSongs.length} correct
+            </Text>
+            {rankedSongs.map((song: any, index: number) => {
+              const correct = getRankCorrectness(index)
+              return (
+                <View key={index} style={styles.compareRow}>
+                  <Text style={styles.compareRank}>#{index + 1}</Text>
+                  <View style={styles.compareInfo}>
+                    <Text style={styles.compareTitle}>{song.title}</Text>
+                    <Text style={styles.compareArtist}>{song.artist}</Text>
+                  </View>
+                  <Text style={[styles.compareIcon, correct ? styles.compareIconCorrect : styles.compareIconWrong]}>
+                    {correct ? '✓' : '✕'}
+                  </Text>
+                </View>
+              )
+            })}
+          </View>
+        )}
+
         <View style={styles.songsCard}>
-          <Text style={styles.songsLabel}>Songs from {year}</Text>
+          <Text style={styles.songsLabel}>Correct ranking — songs from {year}</Text>
           {actualSongs?.map((song: any, index: number) => (
             <View key={index} style={styles.songRow}>
               <Text style={styles.songRank}>#{song.rank}</Text>
@@ -172,6 +209,33 @@ const styles = StyleSheet.create({
   detailsLabel: { fontSize: 12, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5 },
   detailsValue: { fontSize: 36, fontWeight: '700', color: '#f1f5f9', marginTop: 4 },
   detailsSub: { fontSize: 13, color: '#94a3b8', marginTop: 4 },
+  compareCard: {
+    backgroundColor: '#1e293b',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+  },
+  compareLabel: {
+    fontSize: 12,
+    color: '#64748b',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 10,
+  },
+  compareRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#334155',
+  },
+  compareRank: { fontSize: 14, fontWeight: '700', color: '#2563eb', width: 32 },
+  compareInfo: { flex: 1 },
+  compareTitle: { fontSize: 14, fontWeight: '600', color: '#f1f5f9' },
+  compareArtist: { fontSize: 12, color: '#94a3b8', marginTop: 2 },
+  compareIcon: { fontSize: 20, fontWeight: '700', marginLeft: 12 },
+  compareIconCorrect: { color: '#22c55e' },
+  compareIconWrong: { color: '#ef4444' },
   songsCard: {
     backgroundColor: '#1e293b',
     borderRadius: 12,

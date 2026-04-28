@@ -42,8 +42,8 @@ export default function DailyChallengeScreen({ navigation }: any) {
       navigation.replace('DailyResult', {
         score: existingResult.score,
         year: existingResult.year,
-        yearGuess: null,
-        rankedSongs: [],
+        yearGuess: existingResult.yearGuess ?? null,
+        rankedSongs: existingResult.rankedSongs ?? [],
         actualSongs: todaySongs,
         alreadyPlayed: true,
       })
@@ -73,7 +73,7 @@ export default function DailyChallengeScreen({ navigation }: any) {
     const rankScore = calculateRankingScore(todaySongs, rankedSongs)
     const total = yearScore + rankScore
 
-    await recordResult(todayKey, total, todayYear)
+    await recordResult(todayKey, total, todayYear, rankedSongs, yearGuess)
 
     navigation.replace('DailyResult', {
       score: total,
@@ -98,7 +98,6 @@ export default function DailyChallengeScreen({ navigation }: any) {
     )
   }
 
-  // While we navigate-replace away on already-played, render nothing briefly
   if (existingResult?.completed) return null
 
   return (
@@ -176,7 +175,6 @@ export default function DailyChallengeScreen({ navigation }: any) {
 }
 
 function formatDate(key: string): string {
-  // key is "YYYY-MM-DD" — render as "Apr 25, 2026"
   const [y, m, d] = key.split('-').map(Number)
   const date = new Date(y, m - 1, d)
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
@@ -223,7 +221,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     backgroundColor: '#1e293b',
   },
-  rankNum: { fontSize: 18, fontWeight: '700', color: '#2563eb', width: 36 },
+  rankNum: { fontSize: 18, fontWeight: '700', color: '#2563eb', width: 32 },
   rankInfo: { flex: 1 },
   rankTitle: { fontSize: 15, fontWeight: '600', color: '#f1f5f9' },
   rankArtist: { fontSize: 13, color: '#94a3b8', marginTop: 2 },

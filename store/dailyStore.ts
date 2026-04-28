@@ -9,6 +9,9 @@ export interface DailyResult {
   score: number
   year: number
   completed: boolean
+  // Added in v1.0 — older results may not have these
+  rankedSongs?: { rank: number; title: string; artist: string }[]
+  yearGuess?: number
 }
 
 // Map of "YYYY-MM-DD" → result
@@ -20,7 +23,13 @@ interface DailyState {
   bestScore: number
   isLoaded: boolean
   loadDaily: () => Promise<void>
-  recordResult: (dateKey: string, score: number, year: number) => Promise<void>
+  recordResult: (
+    dateKey: string,
+    score: number,
+    year: number,
+    rankedSongs: { rank: number; title: string; artist: string }[],
+    yearGuess: number
+  ) => Promise<void>
   getResult: (dateKey: string) => DailyResult | null
 }
 
@@ -62,11 +71,9 @@ export function getYearForDate(dateKey: string): number {
 }
 
 // Compute streak: how many consecutive days, ending today or yesterday, were completed.
-// (Counting today if played; otherwise streak is "still alive" if yesterday was played, but doesn't grow.)
 function computeStreak(history: DailyHistory): number {
   const today = new Date()
   let streak = 0
-  // Walk backwards day by day; if any day is missing, streak ends.
   for (let i = 0; i < 365; i++) {
     const d = new Date(today)
     d.setDate(today.getDate() - i)
@@ -77,7 +84,6 @@ function computeStreak(history: DailyHistory): number {
     if (history[key]?.completed) {
       streak++
     } else if (i === 0) {
-      // Today not played yet — that's fine, keep checking from yesterday
       continue
     } else {
       break
@@ -120,14 +126,26 @@ export const useDailyStore = create<DailyState>((set, get) => ({
     }
   },
 
-  recordResult: async (dateKey, score, year) => {
+  recordResult: async (dateKey, score, year, rankedSongs, yearGuess) => {
     const state = get()
-    // Don't overwrite an existing result — one try per day
     if (state.history[dateKey]?.completed) return
+
+    // Strip rankedSongs to just what we need for comparison
+    const slimRankedSongs = rankedSongs.map(s => ({
+      rank: s.rank,
+      title: s.title,
+      artist: s.artist,
+    }))
 
     const newHistory = {
       ...state.history,
-      [dateKey]: { score, year, completed: true },
+      [dateKey]: {
+        score,
+        year,
+        completed: true,
+        rankedSongs: slimRankedSongs,
+        yearGuess,
+      },
     }
     set({
       history: newHistory,
