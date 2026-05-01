@@ -14,7 +14,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.briones.roadtriphits"
+      "bundleIdentifier": "com.briones.roadtriphits",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.briones.roadtriphits",
@@ -23,13 +26,23 @@
         "backgroundColor": "#0f172a"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "expo-audio"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "e19261ca-8b61-4447-bd96-b24ed970fc13"
+      }
+    },
+    "owner": "bethand05"
   }
 }

@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native'
-import { usePurchaseStore } from '../store/purchaseStore'
+import Purchases from 'react-native-purchases'
 
 const FEATURES = [
   { emoji: '⚔️', title: 'Versus mode', desc: 'Solo high scores, streaks, and rematches' },
@@ -20,37 +20,61 @@ const FEATURES = [
 ]
 
 export default function PaywallScreen({ navigation }: any) {
-  const setPro = usePurchaseStore(s => s.setPro)
   const [purchasing, setPurchasing] = useState(false)
   const [restoring, setRestoring] = useState(false)
 
   const handlePurchase = async () => {
-    // STUB: When RevenueCat is plugged in, this will trigger the real Apple purchase flow.
-    // For now, we just flip the local entitlement after a short fake delay so the
-    // loading state is visible during testing.
     setPurchasing(true)
-    await new Promise(r => setTimeout(r, 800))
-    await setPro(true)
-    setPurchasing(false)
-    Alert.alert(
-      'Welcome to Pro!',
-      'All features unlocked. Enjoy the full game.',
-      [{ text: 'OK', onPress: () => navigation.goBack() }]
-    )
+    try {
+      const offerings = await Purchases.getOfferings()
+      const lifetime = offerings.current?.lifetime
+      if (!lifetime) {
+        Alert.alert(
+          'Pro unavailable',
+          'Pro is not available right now. Please try again in a moment.'
+        )
+        return
+      }
+
+      const { customerInfo } = await Purchases.purchasePackage(lifetime)
+      if (customerInfo.entitlements.active['pro']) {
+        Alert.alert(
+          'Welcome to Pro!',
+          'All features unlocked. Enjoy the full game.',
+          [{ text: 'OK', onPress: () => navigation.goBack() }]
+        )
+      }
+    } catch (e: any) {
+      // userCancelled is normal — don't surface an alert for it.
+      if (!e?.userCancelled) {
+        Alert.alert('Purchase failed', e?.message ?? 'Something went wrong. Please try again.')
+      }
+    } finally {
+      setPurchasing(false)
+    }
   }
 
   const handleRestore = async () => {
-    // STUB: When RevenueCat is plugged in, this will check Apple for prior purchases.
-    // For now, just flips the local entitlement.
     setRestoring(true)
-    await new Promise(r => setTimeout(r, 600))
-    await setPro(true)
-    setRestoring(false)
-    Alert.alert(
-      'Purchases restored',
-      'Welcome back! All Pro features are unlocked.',
-      [{ text: 'OK', onPress: () => navigation.goBack() }]
-    )
+    try {
+      const customerInfo = await Purchases.restorePurchases()
+      if (customerInfo.entitlements.active['pro']) {
+        Alert.alert(
+          'Purchases restored',
+          'Welcome back! All Pro features are unlocked.',
+          [{ text: 'OK', onPress: () => navigation.goBack() }]
+        )
+      } else {
+        Alert.alert(
+          'No purchase found',
+          "We couldn't find a previous Pro purchase on this Apple ID."
+        )
+      }
+    } catch (e: any) {
+      Alert.alert('Restore failed', e?.message ?? 'Something went wrong. Please try again.')
+    } finally {
+      setRestoring(false)
+    }
   }
 
   const busy = purchasing || restoring

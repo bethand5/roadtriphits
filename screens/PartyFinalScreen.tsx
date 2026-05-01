@@ -11,13 +11,15 @@ import { useGameStore } from '../store/gameStore'
 import { useStatsStore } from '../store/statsStore'
 
 export default function PartyFinalScreen({ navigation }: any) {
-  const { partyScore, partyMaxScore, totalRounds, maxStreakInGame, resetGame } = useGameStore()
+  const { partyScore, partyMaxScore, totalRounds, maxStreaksInGame, resetGame } = useGameStore()
   const recordPartyGame = useStatsStore(s => s.recordPartyGame)
 
   const percentage = partyMaxScore > 0 ? Math.round((partyScore / partyMaxScore) * 100) : 0
+  // Best streak any single player hit during the game
+  const bestStreak = maxStreaksInGame.length > 0 ? Math.max(...maxStreaksInGame) : 0
 
   useEffect(() => {
-    recordPartyGame(percentage, maxStreakInGame)
+    recordPartyGame(percentage, bestStreak)
   }, [])
 
   const getMessage = () => {

@@ -2,6 +2,7 @@ import React, { useEffect } from 'react'
 import { NavigationContainer } from '@react-navigation/native'
 import { createStackNavigator } from '@react-navigation/stack'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
+import Purchases, { LOG_LEVEL } from 'react-native-purchases'
 import { useStatsStore } from './store/statsStore'
 import { useDailyStore } from './store/dailyStore'
 import { usePurchaseStore } from './store/purchaseStore'
@@ -27,6 +28,15 @@ export default function App() {
   const loadPurchase = usePurchaseStore(s => s.loadPurchase)
 
   useEffect(() => {
+    // Configure RevenueCat first so purchaseStore can read entitlements.
+    const apiKey = process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY
+    if (!apiKey) {
+      console.warn('RevenueCat iOS key missing — set EXPO_PUBLIC_REVENUECAT_IOS_KEY in .env')
+    } else {
+      if (__DEV__) Purchases.setLogLevel(LOG_LEVEL.DEBUG)
+      Purchases.configure({ apiKey })
+    }
+
     loadStats()
     loadDaily()
     loadPurchase()

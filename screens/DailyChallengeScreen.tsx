@@ -119,7 +119,7 @@ export default function DailyChallengeScreen({ navigation }: any) {
         </View>
 
         <Text style={styles.sectionLabel}>Songs</Text>
-        {todaySongs.map((song, index) => (
+        {todaySongs.map((song: any, index) => (
           <SongPlayer
             key={index}
             title={song.title}
